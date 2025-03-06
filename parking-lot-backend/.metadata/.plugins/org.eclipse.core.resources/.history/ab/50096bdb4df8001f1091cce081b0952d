@@ -1,0 +1,13 @@
+package com.parkinglot.strategies;
+
+import com.parkinglot.models.Invoice;
+import org.springframework.stereotype.Component;
+
+@Component
+public class DefaultPaymentStrategy implements PaymentStrategy {
+    @Override
+    public void processPayment(Invoice invoice, double amount) {
+        System.out.println("Processing payment of " + amount + " via " + invoice.getPaymentType());
+        // Integrate with actual payment gateway here
+    }
+}

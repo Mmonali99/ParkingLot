@@ -1,0 +1,47 @@
+package com.parkinglot.controllers;
+
+import com.parkinglot.dtos.ParkingSpotDTO;
+import com.parkinglot.services.ParkingSpotService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/parking-spots")
+public class ParkingSpotController {
+    private final ParkingSpotService parkingSpotService;
+
+    @Autowired
+    public ParkingSpotController(ParkingSpotService parkingSpotService) {
+        this.parkingSpotService = parkingSpotService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ParkingSpotDTO>> getAllParkingSpots() {
+        return ResponseEntity.ok(parkingSpotService.findAll());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ParkingSpotDTO> getParkingSpotById(@PathVariable Long id) {
+        return ResponseEntity.ok(parkingSpotService.findById(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<ParkingSpotDTO> createParkingSpot(@RequestBody ParkingSpotDTO parkingSpotDTO) {
+        return ResponseEntity.ok(parkingSpotService.save(parkingSpotDTO));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ParkingSpotDTO> updateParkingSpot(@PathVariable Long id, @RequestBody ParkingSpotDTO parkingSpotDTO) {
+        parkingSpotDTO.setId(id);
+        return ResponseEntity.ok(parkingSpotService.save(parkingSpotDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteParkingSpot(@PathVariable Long id) {
+        parkingSpotService.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+}

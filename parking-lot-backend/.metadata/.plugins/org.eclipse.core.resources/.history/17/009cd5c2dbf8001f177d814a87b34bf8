@@ -1,0 +1,32 @@
+package com.parkinglot.controllers;
+
+import com.parkinglot.dtos.ParkingSpotDTO;
+import com.parkinglot.services.ParkingSpotService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/parking-spots")
+public class ParkingSpotController {
+    @Autowired
+    private ParkingSpotService parkingSpotService;
+
+    @GetMapping
+    public ResponseEntity<List<ParkingSpotDTO>> getAllSpots() {
+        return ResponseEntity.ok(parkingSpotService.getAllSpots());
+    }
+
+    @GetMapping("/{spotId}")
+    public ResponseEntity<ParkingSpotDTO> getSpotById(@PathVariable Long spotId) {
+        return ResponseEntity.ok(parkingSpotService.getSpotById(spotId));
+    }
+
+    @PutMapping("/{spotId}")
+    public ResponseEntity<ParkingSpotDTO> updateSpot(@PathVariable Long spotId, @RequestBody ParkingSpotDTO spotDTO) {
+        spotDTO.setId(spotId);
+        return ResponseEntity.ok(parkingSpotService.updateSpot(spotDTO));
+    }
+}

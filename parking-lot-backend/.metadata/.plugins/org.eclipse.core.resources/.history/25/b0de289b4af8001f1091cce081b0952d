@@ -1,0 +1,30 @@
+package com.parkinglot.strategies;
+
+import com.parkinglot.models.*;
+import com.parkinglot.repositories.ParkingLotRepository;
+import com.parkinglot.repositories.ParkingSpotRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.Comparator;
+
+@Component
+public class OptimizedSpotAssignmentStrategy implements SpotAssignmentStrategy {
+    @Autowired
+    private ParkingLotRepository parkingLotRepository;
+
+    @Autowired
+    private ParkingSpotRepository parkingSpotRepository;
+
+    @Override
+    public ParkingSpot getSpot(Long parkingLotId, Gate gate, VehicleType vehicleType) {
+        ParkingLot parkingLot = parkingLotRepository.findById(parkingLotId)
+                .orElseThrow(() -> new RuntimeException("Parking lot not found"));
+
+        return parkingLot.getParkingFloorList().stream()
+                .flatMap(floor -> floor.getParkingSpotsList().stream())
+                .filter(spot -> spot.getVehicleType() == vehicleType && spot.getParkingSpotStatus() == ParkingSpotStatus.AVAILABLE)
+                .min(Comparator.comparingInt(spot -> Math.abs(spot.getSlotNumber() - gate.getGateNumber())))
+                .orElse(null); // Closest available spot to the gate
+    }
+}

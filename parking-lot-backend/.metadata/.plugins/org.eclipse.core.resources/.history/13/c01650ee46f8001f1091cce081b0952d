@@ -1,0 +1,60 @@
+package com.parkinglot;
+
+import com.parkinglot.controllers.TicketController;
+import com.parkinglot.dtos.IssueTicketRequest;
+import com.parkinglot.dtos.IssueTicketResponse;
+import com.parkinglot.models.VehicleType;
+import com.parkinglot.repositories.GateRepository;
+import com.parkinglot.repositories.ParkingLotRepository;
+import com.parkinglot.repositories.TicketRepository;
+import com.parkinglot.repositories.VehicleRepository;
+import com.parkinglot.services.TicketService;
+import com.parkinglot.strategies.RandomSpotAssignmentStrategy;
+import com.parkinglot.strategies.SpotAssignmentStrategy;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+
+@SpringBootApplication
+public class ParkingLot {
+    public static void main(String[] args) {
+        SpringApplication.run(ParkingLot.class, args);
+        System.out.println("Parking Lot Application Started!");
+    }
+
+    @Bean
+    public GateRepository gateRepository() {
+        return new GateRepository();
+    }
+
+    @Bean
+    public ParkingLotRepository parkingLotRepository() {
+        return new ParkingLotRepository();
+    }
+
+    @Bean
+    public TicketRepository ticketRepository() {
+        return new TicketRepository();
+    }
+
+    @Bean
+    public VehicleRepository vehicleRepository() {
+        return new VehicleRepository();
+    }
+
+    @Bean
+    public SpotAssignmentStrategy spotAssignmentStrategy(ParkingLotRepository parkingLotRepository) {
+        return new RandomSpotAssignmentStrategy(parkingLotRepository);
+    }
+
+    @Bean
+    public TicketService ticketService(GateRepository gateRepository, VehicleRepository vehicleRepository,
+                                       SpotAssignmentStrategy spotAssignmentStrategy, TicketRepository ticketRepository) {
+        return new TicketService(gateRepository, vehicleRepository, spotAssignmentStrategy, ticketRepository);
+    }
+
+    @Bean
+    public TicketController ticketController(TicketService ticketService) {
+        return new TicketController(ticketService);
+    }
+}

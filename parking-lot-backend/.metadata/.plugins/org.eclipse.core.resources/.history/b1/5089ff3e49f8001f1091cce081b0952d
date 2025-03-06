@@ -1,0 +1,51 @@
+package com.parkinglot.controllers;
+
+import com.parkinglot.dtos.IssueTicketRequest;
+import com.parkinglot.dtos.IssueTicketResponse;
+import com.parkinglot.exceptions.GateNotFoundException;
+import com.parkinglot.models.Ticket;
+import com.parkinglot.services.TicketService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/tickets")
+public class TicketController {
+    private final TicketService ticketService;
+
+    @Autowired
+    public TicketController(TicketService ticketService) {
+        this.ticketService = ticketService;
+    }
+
+    @PostMapping("/issue")
+    public ResponseEntity<IssueTicketResponse> issueTicket(@RequestBody IssueTicketRequest request) {
+        Ticket ticket;
+        try {
+            ticket = ticketService.issueTicket(
+                    request.getVehicleNumber(),
+                    request.getVehicleType(),
+                    request.getGateId());
+        } catch (GateNotFoundException e) {
+            return ResponseEntity.badRequest()
+                    .body(IssueTicketResponse.builder()
+                            .statusCode(400)
+                            .message("BAD REQUEST")
+                            .build());
+        }
+
+        return ResponseEntity.ok(IssueTicketResponse.builder()
+                .ticketId(ticket.getNumber())
+                .floorNumber(ticket.getParkingSpot().getParkingFloor().getFloorNumber())
+                .entryTime(ticket.getEntryTime())
+                .vehicleNumber(ticket.getVehicle().getVehicleNumber())
+                .gateNumber(ticket.getGeneratedAt().getGateNumber())
+                .statusCode(200)
+                .message("SUCCESS")
+                .build());
+    }
+}

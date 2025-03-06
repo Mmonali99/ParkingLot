@@ -1,0 +1,25 @@
+package com.parkinglot.models;
+
+import lombok.*;
+
+import javax.persistence.*;
+
+@Entity
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Gate {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private int gateNumber;
+
+    @ManyToOne
+    private Operator currentOperator;
+
+    @Enumerated(EnumType.STRING)
+    private GateType gateType;
+}

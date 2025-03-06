@@ -1,0 +1,46 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.GateDTO;
+import com.parkinglot.models.Gate;
+import com.parkinglot.repositories.GateRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class GateService {
+    @Autowired
+    private GateRepository gateRepository;
+
+    public GateDTO getGateById(Long gateId) {
+        Gate gate = gateRepository.findById(gateId)
+                .orElseThrow(GateNotFoundException::new);
+        return toDTO(gate);
+    }
+
+    public List<GateDTO> getAllGates() {
+        return gateRepository.findAll().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public GateDTO updateGate(GateDTO gateDTO) {
+        Gate gate = gateRepository.findById(gateDTO.getId())
+                .orElseThrow(GateNotFoundException::new);
+        gate.setGateNumber(gateDTO.getGateNumber());
+        gate.setGateType(gateDTO.getGateType());
+        gate = gateRepository.save(gate);
+        return toDTO(gate);
+    }
+
+    private GateDTO toDTO(Gate gate) {
+        return GateDTO.builder()
+                .id(gate.getId())
+                .gateNumber(gate.getGateNumber())
+                .gateType(gate.getGateType())
+                .operatorName(gate.getCurrentOperator() != null ? gate.getCurrentOperator().getName() : null)
+                .build();
+    }
+}

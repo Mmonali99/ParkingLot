@@ -1,0 +1,63 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.ParkingFloorDTO;
+import com.parkinglot.dtos.ParkingSpotDTO;
+import com.parkinglot.models.ParkingFloor;
+import com.parkinglot.models.ParkingSpot;
+import com.parkinglot.repositories.ParkingFloorRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class ParkingFloorService {
+    @Autowired
+    private ParkingFloorRepository parkingFloorRepository;
+
+    public List<ParkingFloorDTO> getAllFloors() {
+        List<ParkingFloor> floors = parkingFloorRepository.findAll();
+        List<ParkingFloorDTO> floorDTOs = new ArrayList<ParkingFloorDTO>();
+        for (ParkingFloor floor : floors) {
+            floorDTOs.add(toDTO(floor));
+        }
+        return floorDTOs;
+    }
+
+    public ParkingFloorDTO getFloorById(Long floorId) {
+        Optional<ParkingFloor> floorOptional = parkingFloorRepository.findById(floorId);
+        if (!floorOptional.isPresent()) {
+            throw new RuntimeException("Parking floor not found");
+        }
+        return toDTO(floorOptional.get());
+    }
+
+    public ParkingFloorDTO addFloor(ParkingFloorDTO floorDTO) {
+        ParkingFloor floor = new ParkingFloor();
+        floor.setFloorNumber(floorDTO.getFloorNumber());
+        floor = parkingFloorRepository.save(floor);
+        return toDTO(floor);
+    }
+
+    private ParkingFloorDTO toDTO(ParkingFloor floor) {
+        List<ParkingSpotDTO> spots = null;
+        if (floor.getParkingSpotsList() != null) {
+            spots = new ArrayList<ParkingSpotDTO>();
+            for (ParkingSpot spot : floor.getParkingSpotsList()) {
+                ParkingSpotDTO spotDTO = new ParkingSpotDTO();
+                spotDTO.setId(spot.getId());
+                spotDTO.setSlotNumber(spot.getSlotNumber());
+                spotDTO.setStatus(spot.getStatus());
+                spotDTO.setVehicleType(spot.getVehicleType());
+                spots.add(spotDTO);
+            }
+        }
+        ParkingFloorDTO dto = new ParkingFloorDTO();
+        dto.setId(floor.getId());
+        dto.setFloorNumber(floor.getFloorNumber());
+        dto.setSpots(spots);
+        return dto;
+    }
+}

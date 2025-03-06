@@ -1,0 +1,52 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.ParkingLotDTO;
+import com.parkinglot.models.ParkingLot;
+import com.parkinglot.repositories.ParkingLotRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class ParkingLotService {
+    @Autowired
+    private ParkingLotRepository parkingLotRepository;
+
+    public List<ParkingLotDTO> findAll() {
+        return parkingLotRepository.findAll().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public ParkingLotDTO findById(Long id) {
+        ParkingLot parkingLot = parkingLotRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Parking lot not found"));
+        return toDTO(parkingLot);
+    }
+
+    public ParkingLotDTO save(ParkingLotDTO parkingLotDTO) {
+        ParkingLot parkingLot = ParkingLot.builder()
+                .id(parkingLotDTO.getId())
+                .name(parkingLotDTO.getName())
+                .address(parkingLotDTO.getAddress())
+                .build();
+        parkingLot = parkingLotRepository.save(parkingLot);
+        return toDTO(parkingLot);
+    }
+
+    private ParkingLotDTO toDTO(ParkingLot parkingLot) {
+        return ParkingLotDTO.builder()
+                .id(parkingLot.getId())
+                .name(parkingLot.getName())
+                .address(parkingLot.getAddress())
+                .parkingFloorIds(parkingLot.getParkingFloorList() != null ?
+                        parkingLot.getParkingFloorList().stream().map(ParkingFloor::getId).collect(Collectors.toList()) : null)
+                .entryGateIds(parkingLot.getEntryGates() != null ?
+                        parkingLot.getEntryGates().stream().map(Gate::getId).collect(Collectors.toList()) : null)
+                .exitGateIds(parkingLot.getExitGates() != null ?
+                        parkingLot.getExitGates().stream().map(Gate::getId).collect(Collectors.toList()) : null)
+                .build();
+    }
+}

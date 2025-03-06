@@ -1,0 +1,45 @@
+package com.parkinglot.strategies;
+
+import com.parkinglot.models.*;
+import com.parkinglot.models.enums.ParkingSpotStatus;
+import com.parkinglot.repositories.ParkingLotRepository;
+import com.parkinglot.repositories.ParkingSpotRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Optional;
+
+@Component
+public class OptimizedSpotAssignmentStrategy implements SpotAssignmentStrategy {
+    @Autowired
+    private ParkingLotRepository parkingLotRepository;
+
+    @Autowired
+    private ParkingSpotRepository parkingSpotRepository;
+
+    public ParkingSpot assignSpot(Vehicle vehicle) {
+        Optional<ParkingLot> parkingLotOptional = parkingLotRepository.findById(1L);
+        if (!parkingLotOptional.isPresent()) {
+            throw new RuntimeException("Parking lot not found");
+        }
+        ParkingLot parkingLot = parkingLotOptional.get();
+
+        ParkingSpot closestSpot = null;
+        int minSlotNumber = Integer.MAX_VALUE;
+
+        List<ParkingFloor> floors = parkingLot.getParkingFloorList();
+        for (ParkingFloor floor : floors) {
+            List<ParkingSpot> spots = floor.getParkingSpotsList();
+            for (ParkingSpot spot : spots) {
+                if (spot.getVehicleType() == vehicle.getVehicleType() && 
+                    spot.getStatus() == ParkingSpotStatus.AVAILABLE && 
+                    spot.getSlotNumber() < minSlotNumber) {
+                    closestSpot = spot;
+                    minSlotNumber = spot.getSlotNumber();
+                }
+            }
+        }
+        return closestSpot;
+    }
+}

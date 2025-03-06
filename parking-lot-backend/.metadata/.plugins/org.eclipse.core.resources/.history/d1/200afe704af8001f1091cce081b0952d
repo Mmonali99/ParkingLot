@@ -1,0 +1,54 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.ParkingSpotDTO;
+import com.parkinglot.models.ParkingSpot;
+import com.parkinglot.repositories.ParkingSpotRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class ParkingSpotService {
+    @Autowired
+    private ParkingSpotRepository parkingSpotRepository;
+
+    public List<ParkingSpotDTO> findAll() {
+        return parkingSpotRepository.findAll().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public ParkingSpotDTO findById(Long id) {
+        ParkingSpot spot = parkingSpotRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Parking spot not found"));
+        return toDTO(spot);
+    }
+
+    public ParkingSpotDTO save(ParkingSpotDTO spotDTO) {
+        ParkingSpot spot = ParkingSpot.builder()
+                .id(spotDTO.getId())
+                .slotNumber(spotDTO.getSlotNumber())
+                .parkingSpotStatus(spotDTO.getParkingSpotStatus())
+                .vehicleType(spotDTO.getVehicleType())
+                .build();
+        spot = parkingSpotRepository.save(spot);
+        return toDTO(spot);
+    }
+
+    public void deleteById(Long id) {
+        parkingSpotRepository.deleteById(id);
+    }
+
+    private ParkingSpotDTO toDTO(ParkingSpot spot) {
+        return ParkingSpotDTO.builder()
+                .id(spot.getId())
+                .slotNumber(spot.getSlotNumber())
+                .parkingSpotStatus(spot.getParkingSpotStatus())
+                .vehicleType(spot.getVehicleType())
+                .parkingFloorId(spot.getParkingFloor() != null ? spot.getParkingFloor().getId() : null)
+                .vehicleNumber(spot.getVehicle() != null ? spot.getVehicle().getVehicleNumber() : null)
+                .build();
+    }
+}

@@ -1,0 +1,55 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.AuthRequest;
+import com.parkinglot.dtos.AuthResponse;
+import com.parkinglot.dtos.UserDTO;
+import com.parkinglot.models.User;
+import com.parkinglot.repositories.UserRepository;
+import com.parkinglot.utils.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+@Service
+public class AuthService {
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    public AuthResponse authenticate(AuthRequest request) {
+        Optional<User> userOptional = userRepository.findByUsername(request.getUsername());
+        if (!userOptional.isPresent()) {
+            throw new RuntimeException("User not found");
+        }
+        User user = userOptional.get();
+        if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            String token = jwtUtil.generateToken(user.getUsername());
+            AuthResponse response = new AuthResponse();
+            response.setJwtToken(token);
+            response.setRole(user.getRole());
+            return response;
+        }
+        throw new RuntimeException("Invalid credentials");
+    }
+
+    public AuthResponse register(UserDTO userDTO) {
+        User user = new User();
+        user.setUsername(userDTO.getUsername());
+        user.setPassword(passwordEncoder.encode("default_password")); // Default password
+        user.setEmail(userDTO.getEmail());
+        user.setRole(userDTO.getRole());
+        user = userRepository.save(user);
+        String token = jwtUtil.generateToken(user.getUsername());
+        AuthResponse response = new AuthResponse();
+        response.setJwtToken(token);
+        response.setRole(user.getRole());
+        return response;
+    }
+}

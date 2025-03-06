@@ -1,0 +1,31 @@
+package com.parkinglot.controllers;
+
+import com.parkinglot.dtos.OperatorDTO;
+import com.parkinglot.services.OperatorService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/operators")
+public class OperatorController {
+    @Autowired
+    private OperatorService operatorService;
+
+    @GetMapping
+    public ResponseEntity<List<OperatorDTO>> getAllOperators() {
+        return ResponseEntity.ok(operatorService.getAllOperators());
+    }
+
+    @GetMapping("/{empId}")
+    public ResponseEntity<OperatorDTO> getOperatorById(@PathVariable String empId) {
+        return ResponseEntity.ok(operatorService.getOperatorById(empId)); // Fixed typo
+    }
+
+    @PostMapping
+    public ResponseEntity<OperatorDTO> addOperator(@RequestBody OperatorDTO operatorDTO) {
+        return ResponseEntity.ok(operatorService.addOperator(operatorDTO));
+    }
+}

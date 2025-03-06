@@ -1,0 +1,44 @@
+package com.parkinglot;
+
+import com.parkinglot.controllers.TicketController;
+import com.parkinglot.dtos.IssueTicketRequest;
+import com.parkinglot.dtos.IssueTicketResponse;
+import com.parkinglot.models.VehicleType;
+import com.parkinglot.repositories.GateRepository;
+import com.parkinglot.repositories.ParkingLotRepository;
+import com.parkinglot.repositories.TicketRepository;
+import com.parkinglot.repositories.VehicleRepository;
+import com.parkinglot.services.TicketService;
+import com.parkinglot.strategies.RandomSpotAssignmentStrategy;
+import com.parkinglot.strategies.SpotAssignmentStrategy;
+
+public class ParkingLot {
+    public static void main(String[] args) {
+        System.out.println("Parking Lot Application Starting...");
+
+        // Initialize repositories
+        GateRepository gateRepository = new GateRepository();
+        ParkingLotRepository parkingLotRepository = new ParkingLotRepository();
+        TicketRepository ticketRepository = new TicketRepository();
+        VehicleRepository vehicleRepository = new VehicleRepository();
+
+        // Initialize strategy
+        SpotAssignmentStrategy spotAssignmentStrategy = new RandomSpotAssignmentStrategy(parkingLotRepository);
+
+        // Initialize service
+        TicketService ticketService = new TicketService(gateRepository, vehicleRepository, spotAssignmentStrategy, ticketRepository);
+
+        // Initialize controller
+        TicketController ticketController = new TicketController(ticketService);
+
+        // Simulate issuing a ticket
+        IssueTicketRequest request = IssueTicketRequest.builder()
+                .gateId(1L)
+                .vehicleNumber("ABC123")
+                .vehicleType(VehicleType.CAR)
+                .build();
+
+        IssueTicketResponse response = ticketController.issueTicket(request);
+        System.out.println("Ticket Issued: " + response.getTicketId() + " for vehicle " + response.getVehicleNumber());
+    }
+}

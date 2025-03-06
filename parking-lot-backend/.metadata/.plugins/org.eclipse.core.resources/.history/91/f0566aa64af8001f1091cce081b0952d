@@ -1,0 +1,28 @@
+package com.parkinglot.strategies;
+
+import com.parkinglot.models.*;
+import com.parkinglot.repositories.ParkingLotRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class RandomSpotAssignmentStrategy implements SpotAssignmentStrategy {
+    @Autowired
+    private ParkingLotRepository parkingLotRepository;
+
+    @Override
+    public ParkingSpot getSpot(Long parkingLotId, Gate gate, VehicleType vehicleType) {
+        ParkingLot parkingLot = parkingLotRepository.findById(parkingLotId)
+                .orElseThrow(() -> new RuntimeException("Parking lot not found"));
+
+        for (ParkingFloor parkingFloor : parkingLot.getParkingFloorList()) {
+            for (ParkingSpot parkingSpot : parkingFloor.getParkingSpotsList()) {
+                if (parkingSpot.getVehicleType() == vehicleType &&
+                        parkingSpot.getParkingSpotStatus() == ParkingSpotStatus.AVAILABLE) {
+                    return parkingSpot;
+                }
+            }
+        }
+        return null;
+    }
+}

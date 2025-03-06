@@ -1,0 +1,7 @@
+package com.parkinglot.repositories;
+
+import com.parkinglot.models.Operator;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface OperatorRepository extends JpaRepository<Operator, String> {
+}

@@ -1,0 +1,123 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.IssueTicketRequest;
+import com.parkinglot.dtos.IssueTicketResponse;
+import com.parkinglot.dtos.TicketDTO;
+import com.parkinglot.exceptions.GateNotFoundException;
+import com.parkinglot.models.*;
+import com.parkinglot.repositories.*;
+import com.parkinglot.strategies.PaymentStrategy;
+import com.parkinglot.strategies.SpotAssignmentStrategy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
+
+@Service
+public class TicketService {
+    @Autowired
+    private GateRepository gateRepository;
+
+    @Autowired
+    private VehicleRepository vehicleRepository;
+
+    @Autowired
+    private TicketRepository ticketRepository;
+
+    @Autowired
+    private ParkingSpotRepository parkingSpotRepository;
+
+    @Autowired
+    private OperatorRepository operatorRepository;
+
+    @Autowired
+    private InvoiceRepository invoiceRepository;
+
+    @Autowired
+    private SpotAssignmentStrategy spotAssignmentStrategy;
+
+    @Autowired
+    private PaymentStrategy paymentStrategy;
+
+    public IssueTicketResponse issueTicket(IssueTicketRequest request) {
+        Gate gate = gateRepository.findById(request.getGateId())
+                .orElseThrow(GateNotFoundException::new);
+
+        Vehicle vehicle = vehicleRepository.findByVehicleNumber(request.getVehicleNumber())
+                .orElseGet(() -> {
+                    Vehicle newVehicle = Vehicle.builder()
+                            .vehicleNumber(request.getVehicleNumber())
+                            .vehicleType(request.getVehicleType())
+                            .build();
+                    return vehicleRepository.save(newVehicle);
+                });
+
+        ParkingSpot spot = spotAssignmentStrategy.assignSpot(vehicle);
+        if (spot == null) {
+            throw new ParkingSpotNotFoundException();
+        }
+
+        spot.setStatus(ParkingSpotStatus.OCCUPIED);
+        spot.setVehicle(vehicle);
+        parkingSpotRepository.save(spot);
+
+        Ticket ticket = Ticket.builder()
+                .number(String.valueOf(Instant.now().getEpochSecond()))
+                .entryTime(new Date())
+                .vehicle(vehicle)
+                .parkingSpot(spot)
+                .generatedAt(gate)
+                .generatedBy(gate.getCurrentOperator())
+                .build();
+
+        ticket = ticketRepository.save(ticket);
+
+        return IssueTicketResponse.builder()
+                .ticketNumber(ticket.getNumber())
+                .entryTime(ticket.getEntryTime())
+                .gateName(String.valueOf(gate.getGateNumber()))
+                .assignedSpotNumber(spot.getSlotNumber())
+                .build();
+    }
+
+    public TicketDTO getTicketById(String ticketNumber) {
+        Ticket ticket = ticketRepository.findByNumber(ticketNumber)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+        return TicketDTO.builder()
+                .ticketNumber(ticket.getNumber())
+                .vehicleNumber(ticket.getVehicle().getVehicleNumber())
+                .slotNumber(ticket.getParkingSpot().getSlotNumber())
+                .entryTime(ticket.getEntryTime())
+                .build();
+    }
+
+    public Invoice exitVehicle(String ticketNumber) {
+        Ticket ticket = ticketRepository.findByNumber(ticketNumber)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        ParkingSpot spot = ticket.getParkingSpot();
+        spot.setStatus(ParkingSpotStatus.AVAILABLE);
+        spot.setVehicle(null);
+        parkingSpotRepository.save(spot);
+
+        long timeDiff = new Date().getTime() - ticket.getEntryTime().getTime();
+        double hours = TimeUnit.MILLISECONDS.toHours(timeDiff);
+        double ratePerHour = 10.0; // Example rate
+        double totalCost = hours * ratePerHour;
+
+        Invoice invoice = Invoice.builder()
+                .number("INV-" + ticketNumber)
+                .exitTime(new Date())
+                .totalCost(totalCost)
+                .ticket(ticket)
+                .generatedAt(ticket.getGeneratedAt()) // Assuming exit at same gate for simplicity
+                .generatedBy(ticket.getGeneratedBy())
+                .paymentType(PaymentType.CASH) // Default, can be parameterized
+                .build();
+
+        paymentStrategy.processPayment(invoice, totalCost);
+        return invoiceRepository.save(invoice);
+    }
+}

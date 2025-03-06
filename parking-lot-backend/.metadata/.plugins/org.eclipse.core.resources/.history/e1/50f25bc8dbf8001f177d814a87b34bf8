@@ -1,0 +1,32 @@
+package com.parkinglot.controllers;
+
+import com.parkinglot.dtos.IssueTicketRequest;
+import com.parkinglot.dtos.IssueTicketResponse;
+import com.parkinglot.dtos.TicketDTO;
+import com.parkinglot.models.Invoice;
+import com.parkinglot.services.TicketService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/tickets")
+public class TicketController {
+    @Autowired
+    private TicketService ticketService;
+
+    @PostMapping("/issue")
+    public ResponseEntity<IssueTicketResponse> issueTicket(@RequestBody IssueTicketRequest request) {
+        return ResponseEntity.ok(ticketService.issueTicket(request));
+    }
+
+    @GetMapping("/{ticketNumber}")
+    public ResponseEntity<TicketDTO> getTicketById(@PathVariable String ticketNumber) {
+        return ResponseEntity.ok(ticketService.getTicketById(ticketNumber));
+    }
+
+    @PostMapping("/exit/{ticketNumber}")
+    public ResponseEntity<Invoice> exitVehicle(@PathVariable String ticketNumber) {
+        return ResponseEntity.ok(ticketService.exitVehicle(ticketNumber));
+    }
+}

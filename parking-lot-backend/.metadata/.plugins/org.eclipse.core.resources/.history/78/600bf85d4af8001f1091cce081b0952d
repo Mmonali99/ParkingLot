@@ -1,0 +1,44 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.OperatorDTO;
+import com.parkinglot.models.Operator;
+import com.parkinglot.repositories.OperatorRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class OperatorService {
+    @Autowired
+    private OperatorRepository operatorRepository;
+
+    public List<OperatorDTO> findAll() {
+        return operatorRepository.findAll().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public OperatorDTO findById(String id) {
+        Operator operator = operatorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Operator not found"));
+        return toDTO(operator);
+    }
+
+    public OperatorDTO save(OperatorDTO operatorDTO) {
+        Operator operator = Operator.builder()
+                .empId(operatorDTO.getEmpId())
+                .name(operatorDTO.getName())
+                .build();
+        operator = operatorRepository.save(operator);
+        return toDTO(operator);
+    }
+
+    private OperatorDTO toDTO(Operator operator) {
+        return OperatorDTO.builder()
+                .empId(operator.getEmpId())
+                .name(operator.getName())
+                .build();
+    }
+}

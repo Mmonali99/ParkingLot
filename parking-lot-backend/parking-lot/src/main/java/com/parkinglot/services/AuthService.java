@@ -1,0 +1,81 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.AuthRequest;
+import com.parkinglot.dtos.AuthResponse;
+import com.parkinglot.dtos.UserDTO;
+import com.parkinglot.models.User;
+import com.parkinglot.repositories.UserRepository;
+import com.parkinglot.utils.JwtUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+
+@Service
+public class AuthService {
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Transactional(readOnly = true)
+    public AuthResponse authenticate(AuthRequest request) {
+        logger.info("Authenticating user: {}", request.getUsername());
+        try {
+            Optional<User> userOptional = userRepository.findByUsername(request.getUsername());
+            if (!userOptional.isPresent()) {
+                logger.error("User not found: {}", request.getUsername());
+                throw new RuntimeException("User not found");
+            }
+            User user = userOptional.get();
+            logger.info("Found user: {} with password hash: {}", user.getUsername(), user.getPassword());
+            boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPassword());
+            logger.info("Password match result for {}: {}", request.getUsername(), passwordMatches);
+            if (passwordMatches) {
+                String token = jwtUtil.generateToken(user.getUsername());
+                logger.info("Authentication successful for user: {}", request.getUsername());
+                return AuthResponse.builder()
+                    .jwtToken(token)
+                    .role(user.getRole())
+                    .build();
+            }
+            logger.error("Invalid credentials for user: {}", request.getUsername());
+            throw new RuntimeException("Invalid credentials");
+        } catch (Exception e) {
+            logger.error("Authentication failed for user: {} - {}", request.getUsername(), e.getMessage(), e);
+            throw e; // Re-throw to see stack trace in logs
+        }
+    }
+
+    @Transactional
+    public AuthResponse register(UserDTO userDTO) {
+        logger.info("Registering user: {}", userDTO.getUsername());
+        if (userRepository.findByUsername(userDTO.getUsername()).isPresent()) {
+            logger.error("Username already exists: {}", userDTO.getUsername());
+            throw new RuntimeException("Username already exists");
+        }
+        User user = User.builder()
+            .username(userDTO.getUsername())
+            .password(passwordEncoder.encode(userDTO.getPassword()))
+            .email(userDTO.getEmail())
+            .role(userDTO.getRole())
+            .build();
+        user = userRepository.save(user);
+        String token = jwtUtil.generateToken(user.getUsername());
+        logger.info("User registered successfully: {}", userDTO.getUsername());
+        return AuthResponse.builder()
+            .jwtToken(token)
+            .role(user.getRole())
+            .build();
+    }
+}

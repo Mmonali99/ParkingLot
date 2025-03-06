@@ -1,0 +1,24 @@
+package com.parkinglot.controllers;
+
+import com.parkinglot.dtos.VehicleDTO;
+import com.parkinglot.services.VehicleService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/vehicles")
+public class VehicleController {
+    @Autowired
+    private VehicleService vehicleService;
+
+    @PostMapping
+    public ResponseEntity<VehicleDTO> registerVehicle(@RequestBody VehicleDTO vehicleDTO) {
+        return ResponseEntity.ok(vehicleService.registerVehicle(vehicleDTO));
+    }
+
+    @GetMapping("/{vehicleNumber}")
+    public ResponseEntity<VehicleDTO> getVehicleByNumber(@PathVariable String vehicleNumber) {
+        return ResponseEntity.ok(vehicleService.getVehicleByNumber(vehicleNumber));
+    }
+}

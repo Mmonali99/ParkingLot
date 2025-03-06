@@ -1,0 +1,54 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.ParkingFloorDTO;
+import com.parkinglot.dtos.ParkingLotDTO;
+import com.parkinglot.models.ParkingLot;
+import com.parkinglot.repositories.ParkingLotRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class ParkingLotService {
+    @Autowired
+    private ParkingLotRepository parkingLotRepository;
+
+    @Autowired
+    private ParkingFloorService parkingFloorService;
+
+    public List<ParkingLotDTO> getAllParkingLots() {
+        return parkingLotRepository.findAll().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public ParkingLotDTO getParkingLotById(Long lotId) {
+        ParkingLot parkingLot = parkingLotRepository.findById(lotId)
+                .orElseThrow(() -> new RuntimeException("Parking lot not found"));
+        return toDTO(parkingLot);
+    }
+
+    public ParkingLotDTO addParkingLot(ParkingLotDTO parkingLotDTO) {
+        ParkingLot parkingLot = ParkingLot.builder()
+                .name(parkingLotDTO.getName())
+                .address(parkingLotDTO.getAddress())
+                .build();
+        parkingLot = parkingLotRepository.save(parkingLot);
+        return toDTO(parkingLot);
+    }
+
+    private ParkingLotDTO toDTO(ParkingLot parkingLot) {
+        List<ParkingFloorDTO> floors = parkingLot.getParkingFloorList() != null ?
+                parkingLot.getParkingFloorList().stream()
+                        .map(floor -> parkingFloorService.getFloorById(floor.getId()))
+                        .collect(Collectors.toList()) : null;
+        return ParkingLotDTO.builder()
+                .id(parkingLot.getId())
+                .name(parkingLot.getName())
+                .address(parkingLot.getAddress())
+                .floors(floors)
+                .build();
+    }
+}

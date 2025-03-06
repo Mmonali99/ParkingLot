@@ -1,0 +1,131 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.IssueTicketRequest;
+import com.parkinglot.dtos.IssueTicketResponse;
+import com.parkinglot.dtos.TicketDTO;
+import com.parkinglot.exceptions.GateNotFoundException;
+import com.parkinglot.exceptions.ParkingSpotNotFoundException;
+import com.parkinglot.models.*;
+import com.parkinglot.models.enums.ParkingSpotStatus;
+import com.parkinglot.models.enums.PaymentType;
+import com.parkinglot.repositories.*;
+import com.parkinglot.strategies.PaymentStrategy;
+import com.parkinglot.strategies.SpotAssignmentStrategy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.Date;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+@Service
+public class TicketService {
+    @Autowired
+    private GateRepository gateRepository;
+
+    @Autowired
+    private VehicleRepository vehicleRepository;
+
+    @Autowired
+    private TicketRepository ticketRepository;
+
+    @Autowired
+    private ParkingSpotRepository parkingSpotRepository;
+
+    @Autowired
+    private InvoiceRepository invoiceRepository;
+
+    @Autowired
+    private SpotAssignmentStrategy spotAssignmentStrategy;
+
+    @Autowired
+    private PaymentStrategy paymentStrategy;
+
+    public IssueTicketResponse issueTicket(IssueTicketRequest request) {
+        Optional<Gate> gateOptional = gateRepository.findById(request.getGateId());
+        if (!gateOptional.isPresent()) {
+            throw new GateNotFoundException();
+        }
+        Gate gate = gateOptional.get();
+
+        Optional<Vehicle> vehicleOptional = vehicleRepository.findByVehicleNumber(request.getVehicleNumber());
+        Vehicle vehicle;
+        if (!vehicleOptional.isPresent()) {
+            vehicle = new Vehicle();
+            vehicle.setVehicleNumber(request.getVehicleNumber());
+            vehicle.setVehicleType(request.getVehicleType());
+            vehicle = vehicleRepository.save(vehicle);
+        } else {
+            vehicle = vehicleOptional.get();
+        }
+
+        ParkingSpot spot = spotAssignmentStrategy.assignSpot(vehicle);
+        if (spot == null) {
+            throw new ParkingSpotNotFoundException();
+        }
+
+        spot.setStatus(ParkingSpotStatus.OCCUPIED);
+        spot.setVehicle(vehicle);
+        parkingSpotRepository.save(spot);
+
+        Ticket ticket = new Ticket();
+        ticket.setNumber(String.valueOf(System.currentTimeMillis()));
+        ticket.setEntryTime(new Date());
+        ticket.setVehicle(vehicle);
+        ticket.setParkingSpot(spot);
+        ticket.setGeneratedAt(gate);
+        ticket.setGeneratedBy(gate.getCurrentOperator());
+        ticket = ticketRepository.save(ticket);
+
+        IssueTicketResponse response = new IssueTicketResponse();
+        response.setTicketNumber(ticket.getNumber());
+        response.setEntryTime(ticket.getEntryTime());
+        response.setGateName(String.valueOf(gate.getGateNumber()));
+        response.setAssignedSpotNumber(spot.getSlotNumber());
+        return response;
+    }
+
+    public TicketDTO getTicketById(String ticketNumber) {
+        Optional<Ticket> ticketOptional = ticketRepository.findByNumber(ticketNumber);
+        if (!ticketOptional.isPresent()) {
+            throw new RuntimeException("Ticket not found");
+        }
+        Ticket ticket = ticketOptional.get();
+        TicketDTO dto = new TicketDTO();
+        dto.setTicketNumber(ticket.getNumber());
+        dto.setVehicleNumber(ticket.getVehicle().getVehicleNumber());
+        dto.setSlotNumber(ticket.getParkingSpot().getSlotNumber());
+        dto.setEntryTime(ticket.getEntryTime());
+        return dto;
+    }
+
+    public Invoice exitVehicle(String ticketNumber) {
+        Optional<Ticket> ticketOptional = ticketRepository.findByNumber(ticketNumber);
+        if (!ticketOptional.isPresent()) {
+            throw new RuntimeException("Ticket not found");
+        }
+        Ticket ticket = ticketOptional.get();
+
+        ParkingSpot spot = ticket.getParkingSpot();
+        spot.setStatus(ParkingSpotStatus.AVAILABLE);
+        spot.setVehicle(null);
+        parkingSpotRepository.save(spot);
+
+        long timeDiff = new Date().getTime() - ticket.getEntryTime().getTime();
+        double hours = TimeUnit.MILLISECONDS.toHours(timeDiff);
+        double ratePerHour = 10.0;
+        double totalCost = hours * ratePerHour;
+
+        Invoice invoice = new Invoice();
+        invoice.setNumber("INV-" + ticketNumber);
+        invoice.setExitTime(new Date());
+        invoice.setTotalCost(totalCost);
+        invoice.setTicket(ticket);
+        invoice.setGeneratedAt(ticket.getGeneratedAt());
+        invoice.setGeneratedBy(ticket.getGeneratedBy());
+        invoice.setPaymentType(PaymentType.CASH);
+
+        paymentStrategy.processPayment(invoice, totalCost);
+        return invoiceRepository.save(invoice);
+    }
+}

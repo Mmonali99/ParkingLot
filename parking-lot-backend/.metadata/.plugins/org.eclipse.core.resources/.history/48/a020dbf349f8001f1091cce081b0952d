@@ -1,0 +1,31 @@
+package com.parkinglot.models;
+
+import lombok.*;
+
+import javax.persistence.*;
+import java.util.Date;
+
+@Entity
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Invoice {
+    @Id
+    private String number;
+
+    private Date exitTime;
+
+    @OneToOne
+    private Ticket ticket;
+
+    @ManyToOne
+    private Gate generatedAt;
+
+    @ManyToOne
+    private Operator generatedBy;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentType paymentType;
+}

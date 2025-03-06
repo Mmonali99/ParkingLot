@@ -1,0 +1,21 @@
+.parking-lots {
+    padding: 20px;
+  }
+  
+  .parking-lots h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .lot-form input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  .error {
+    color: red;
+    margin-bottom: 10px;
+  }

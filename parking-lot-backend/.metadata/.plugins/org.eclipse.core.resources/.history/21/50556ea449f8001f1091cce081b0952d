@@ -1,0 +1,19 @@
+package com.parkinglot.dtos;
+
+import com.parkinglot.models.ParkingSpotStatus;
+import com.parkinglot.models.VehicleType;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+@Builder
+public class ParkingSpotDTO {
+    private Long id;
+    private int slotNumber;
+    private ParkingSpotStatus parkingSpotStatus;
+    private VehicleType vehicleType;
+    private Long parkingFloorId;
+    private String vehicleNumber;
+}

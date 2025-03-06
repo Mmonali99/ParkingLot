@@ -1,0 +1,51 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.AuthRequest;
+import com.parkinglot.dtos.AuthResponse;
+import com.parkinglot.dtos.UserDTO;
+import com.parkinglot.models.User;
+import com.parkinglot.repositories.UserRepository;
+import com.parkinglot.utils.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Service
+public class AuthService {
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    public AuthResponse authenticate(AuthRequest request) {
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            String token = jwtUtil.generateToken(user.getUsername());
+            return AuthResponse.builder()
+                    .jwtToken(token)
+                    .role(user.getRole())
+                    .build();
+        }
+        throw new RuntimeException("Invalid credentials");
+    }
+
+    public AuthResponse register(UserDTO userDTO) {
+        User user = User.builder()
+                .username(userDTO.getUsername())
+                .password(passwordEncoder.encode("default_password")) // Set a default or require password in DTO
+                .email(userDTO.getEmail())
+                .role(userDTO.getRole())
+                .build();
+        user = userRepository.save(user);
+        String token = jwtUtil.generateToken(user.getUsername());
+        return AuthResponse.builder()
+                .jwtToken(token)
+                .role(user.getRole())
+                .build();
+    }
+}

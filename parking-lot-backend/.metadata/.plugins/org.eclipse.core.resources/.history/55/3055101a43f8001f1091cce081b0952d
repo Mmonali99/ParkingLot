@@ -1,0 +1,35 @@
+package com.parkinglot.controllers;
+
+import com.parkinglot.dtos.GateDTO;
+import com.parkinglot.services.GateService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/gates")
+public class GateController {
+    private final GateService gateService;
+
+    @Autowired
+    public GateController(GateService gateService) {
+        this.gateService = gateService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<GateDTO>> getAllGates() {
+        return ResponseEntity.ok(gateService.findAll());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<GateDTO> getGateById(@PathVariable Long id) {
+        return ResponseEntity.ok(gateService.findById(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<GateDTO> createGate(@RequestBody GateDTO gateDTO) {
+        return ResponseEntity.ok(gateService.save(gateDTO));
+    }
+}

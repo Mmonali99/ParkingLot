@@ -1,0 +1,21 @@
+.vehicles {
+    padding: 20px;
+  }
+  
+  .vehicles h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .vehicle-form input, .vehicle-form select {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  .error {
+    color: red;
+    margin-bottom: 10px;
+  }

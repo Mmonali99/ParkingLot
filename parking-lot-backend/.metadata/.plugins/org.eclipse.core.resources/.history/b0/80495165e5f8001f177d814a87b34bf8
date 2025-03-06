@@ -1,0 +1,57 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.ParkingSpotDTO;
+import com.parkinglot.exceptions.ParkingSpotNotFoundException;
+import com.parkinglot.models.ParkingSpot;
+import com.parkinglot.repositories.ParkingSpotRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class ParkingSpotService {
+    @Autowired
+    private ParkingSpotRepository parkingSpotRepository;
+
+    public List<ParkingSpotDTO> getAllSpots() {
+        List<ParkingSpot> spots = parkingSpotRepository.findAll();
+        List<ParkingSpotDTO> spotDTOs = new ArrayList<ParkingSpotDTO>();
+        for (ParkingSpot spot : spots) {
+            spotDTOs.add(toDTO(spot));
+        }
+        return spotDTOs;
+    }
+
+    public ParkingSpotDTO getSpotById(Long spotId) {
+        Optional<ParkingSpot> spotOptional = parkingSpotRepository.findById(spotId);
+        if (!spotOptional.isPresent()) {
+            throw new ParkingSpotNotFoundException();
+        }
+        return toDTO(spotOptional.get());
+    }
+
+    public ParkingSpotDTO updateSpot(ParkingSpotDTO spotDTO) {
+        Optional<ParkingSpot> spotOptional = parkingSpotRepository.findById(spotDTO.getId());
+        if (!spotOptional.isPresent()) {
+            throw new ParkingSpotNotFoundException();
+        }
+        ParkingSpot spot = spotOptional.get();
+        spot.setSlotNumber(spotDTO.getSlotNumber());
+        spot.setStatus(spotDTO.getStatus());
+        spot.setVehicleType(spotDTO.getVehicleType());
+        spot = parkingSpotRepository.save(spot);
+        return toDTO(spot);
+    }
+
+    private ParkingSpotDTO toDTO(ParkingSpot spot) {
+        ParkingSpotDTO dto = new ParkingSpotDTO();
+        dto.setId(spot.getId());
+        dto.setSlotNumber(spot.getSlotNumber());
+        dto.setStatus(spot.getStatus());
+        dto.setVehicleType(spot.getVehicleType());
+        return dto;
+    }
+}

@@ -1,0 +1,16 @@
+package com.parkinglot.dtos;
+
+import com.parkinglot.models.GateType;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+@Builder
+public class GateDTO {
+    private Long id;
+    private int gateNumber;
+    private String operatorId;
+    private GateType gateType;
+}

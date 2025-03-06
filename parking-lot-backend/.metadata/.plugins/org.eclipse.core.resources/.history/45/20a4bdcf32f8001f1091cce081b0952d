@@ -1,0 +1,17 @@
+package com.parkinglot.config;
+
+// Placeholder for Spring Boot context; not functional in plain Java
+public class WebConfig {
+    // In Spring Boot, this would implement WebMvcConfigurer
+    /*
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:3000")
+                .allowedMethods("GET", "POST", "PUT", "DELETE");
+    }
+    */
+    public void configureCORS() {
+        System.out.println("CORS configuration placeholder: Allow requests from localhost:3000");
+    }
+}

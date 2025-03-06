@@ -1,0 +1,5 @@
+package com.parkinglot.strategies;
+
+public class DefaultPaymentStrategy {
+
+}

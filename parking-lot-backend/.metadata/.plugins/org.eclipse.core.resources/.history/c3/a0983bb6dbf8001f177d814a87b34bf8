@@ -1,0 +1,31 @@
+package com.parkinglot.controllers;
+
+import com.parkinglot.dtos.ParkingFloorDTO;
+import com.parkinglot.services.ParkingFloorService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/parking-floors")
+public class ParkingFloorController {
+    @Autowired
+    private ParkingFloorService parkingFloorService;
+
+    @GetMapping
+    public ResponseEntity<List<ParkingFloorDTO>> getAllFloors() {
+        return ResponseEntity.ok(parkingFloorService.getAllFloors());
+    }
+
+    @GetMapping("/{floorId}")
+    public ResponseEntity<ParkingFloorDTO> getFloorById(@PathVariable Long floorId) {
+        return ResponseEntity.ok(parkingFloorService.getFloorById(floorId));
+    }
+
+    @PostMapping
+    public ResponseEntity<ParkingFloorDTO> addFloor(@RequestBody ParkingFloorDTO floorDTO) {
+        return ResponseEntity.ok(parkingFloorService.addFloor(floorDTO));
+    }
+}

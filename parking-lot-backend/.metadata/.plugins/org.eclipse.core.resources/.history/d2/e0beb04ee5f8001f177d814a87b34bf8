@@ -1,0 +1,27 @@
+package com.parkinglot.services;
+
+import com.parkinglot.models.Invoice;
+import com.parkinglot.repositories.InvoiceRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class InvoiceService {
+    @Autowired
+    private InvoiceRepository invoiceRepository;
+
+    public List<Invoice> getAllInvoices() {
+        return invoiceRepository.findAll();
+    }
+
+    public Invoice getInvoiceById(Long id) {
+        Optional<Invoice> invoiceOptional = invoiceRepository.findById(id);
+        if (!invoiceOptional.isPresent()) {
+            throw new RuntimeException("Invoice not found");
+        }
+        return invoiceOptional.get();
+    }
+}

@@ -1,0 +1,54 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.ParkingFloorDTO;
+import com.parkinglot.dtos.ParkingSpotDTO;
+import com.parkinglot.models.ParkingFloor;
+import com.parkinglot.repositories.ParkingFloorRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class ParkingFloorService {
+    @Autowired
+    private ParkingFloorRepository parkingFloorRepository;
+
+    public List<ParkingFloorDTO> getAllFloors() {
+        return parkingFloorRepository.findAll().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public ParkingFloorDTO getFloorById(Long floorId) {
+        ParkingFloor floor = parkingFloorRepository.findById(floorId)
+                .orElseThrow(() -> new RuntimeException("Parking floor not found"));
+        return toDTO(floor);
+    }
+
+    public ParkingFloorDTO addFloor(ParkingFloorDTO floorDTO) {
+        ParkingFloor floor = ParkingFloor.builder()
+                .floorNumber(floorDTO.getFloorNumber())
+                .build();
+        floor = parkingFloorRepository.save(floor);
+        return toDTO(floor);
+    }
+
+    private ParkingFloorDTO toDTO(ParkingFloor floor) {
+        List<ParkingSpotDTO> spots = floor.getParkingSpotsList() != null ?
+                floor.getParkingSpotsList().stream()
+                        .map(spot -> ParkingSpotDTO.builder()
+                                .id(spot.getId())
+                                .slotNumber(spot.getSlotNumber())
+                                .status(spot.getStatus())
+                                .vehicleType(spot.getVehicleType())
+                                .build())
+                        .collect(Collectors.toList()) : null;
+        return ParkingFloorDTO.builder()
+                .id(floor.getId())
+                .floorNumber(floor.getFloorNumber())
+                .spots(spots)
+                .build();
+    }
+}

@@ -1,0 +1,34 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.VehicleDTO;
+import com.parkinglot.models.Vehicle;
+import com.parkinglot.repositories.VehicleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class VehicleService {
+    @Autowired
+    private VehicleRepository vehicleRepository;
+
+    public VehicleDTO registerVehicle(VehicleDTO vehicleDTO) {
+        Vehicle vehicle = Vehicle.builder()
+                .vehicleNumber(vehicleDTO.getVehicleNumber())
+                .vehicleType(vehicleDTO.getVehicleType())
+                .build();
+        vehicle = vehicleRepository.save(vehicle);
+        return VehicleDTO.builder()
+                .vehicleNumber(vehicle.getVehicleNumber())
+                .vehicleType(vehicle.getVehicleType())
+                .build();
+    }
+
+    public VehicleDTO getVehicleByNumber(String vehicleNumber) {
+        Vehicle vehicle = vehicleRepository.findByVehicleNumber(vehicleNumber)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        return VehicleDTO.builder()
+                .vehicleNumber(vehicle.getVehicleNumber())
+                .vehicleType(vehicle.getVehicleType())
+                .build();
+    }
+}

@@ -1,0 +1,61 @@
+package com.parkinglot.services;
+
+import com.parkinglot.exceptions.GateNotFoundException;
+import com.parkinglot.models.*;
+import com.parkinglot.repositories.GateRepository;
+import com.parkinglot.repositories.TicketRepository;
+import com.parkinglot.repositories.VehicleRepository;
+import com.parkinglot.strategies.SpotAssignmentStrategy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.Date;
+
+@Service
+public class TicketService {
+    @Autowired
+    private GateRepository gateRepository;
+
+    @Autowired
+    private VehicleRepository vehicleRepository;
+
+    @Autowired
+    private SpotAssignmentStrategy spotAssignmentStrategy;
+
+    @Autowired
+    private TicketRepository ticketRepository;
+
+    public Ticket issueTicket(String vehicleNumber, VehicleType vehicleType, Long gateId) throws GateNotFoundException {
+        Ticket ticket = new Ticket();
+
+        Gate gate = gateRepository.findById(gateId)
+                .orElseThrow(GateNotFoundException::new);
+
+        Vehicle savedVehicle = vehicleRepository.findById(vehicleNumber)
+                .orElseGet(() -> {
+                    Vehicle vehicle = Vehicle.builder()
+                            .vehicleNumber(vehicleNumber)
+                            .vehicleType(vehicleType)
+                            .build();
+                    return vehicleRepository.save(vehicle);
+                });
+
+        ParkingSpot parkingSpot = spotAssignmentStrategy.getSpot(1L, gate, vehicleType);
+        if (parkingSpot == null) {
+            throw new RuntimeException("No available parking spot found");
+        }
+
+        ticket.setGeneratedAt(gate);
+        ticket.setVehicle(savedVehicle);
+        ticket.setEntryTime(new Date());
+        ticket.setGeneratedBy(gate.getCurrentOperator());
+        ticket.setNumber(String.valueOf(Instant.now().getEpochSecond()));
+        ticket.setParkingSpot(parkingSpot);
+
+        parkingSpot.setVehicle(savedVehicle);
+        parkingSpot.setParkingSpotStatus(ParkingSpotStatus.OCCUPIED);
+
+        return ticketRepository.save(ticket);
+    }
+}

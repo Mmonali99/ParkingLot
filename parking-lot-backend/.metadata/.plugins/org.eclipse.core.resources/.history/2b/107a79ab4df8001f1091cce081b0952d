@@ -1,0 +1,62 @@
+package com.parkinglot.services;
+
+import com.parkinglot.dtos.ParkingFloorDTO;
+import com.parkinglot.dtos.ParkingLotDTO;
+import com.parkinglot.models.ParkingLot;
+import com.parkinglot.repositories.ParkingLotRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class ParkingLotService {
+    @Autowired
+    private ParkingLotRepository parkingLotRepository;
+
+    @Autowired
+    private ParkingFloorService parkingFloorService;
+
+    public List<ParkingLotDTO> getAllParkingLots() {
+        List<ParkingLot> parkingLots = parkingLotRepository.findAll();
+        List<ParkingLotDTO> parkingLotDTOs = new ArrayList<ParkingLotDTO>();
+        for (ParkingLot parkingLot : parkingLots) {
+            parkingLotDTOs.add(toDTO(parkingLot));
+        }
+        return parkingLotDTOs;
+    }
+
+    public ParkingLotDTO getParkingLotById(Long lotId) {
+        Optional<ParkingLot> parkingLotOptional = parkingLotRepository.findById(lotId);
+        if (!parkingLotOptional.isPresent()) {
+            throw new RuntimeException("Parking lot not found");
+        }
+        return toDTO(parkingLotOptional.get());
+    }
+
+    public ParkingLotDTO addParkingLot(ParkingLotDTO parkingLotDTO) {
+        ParkingLot parkingLot = new ParkingLot();
+        parkingLot.setName(parkingLotDTO.getName());
+        parkingLot.setAddress(parkingLotDTO.getAddress());
+        parkingLot = parkingLotRepository.save(parkingLot);
+        return toDTO(parkingLot);
+    }
+
+    private ParkingLotDTO toDTO(ParkingLot parkingLot) {
+        List<ParkingFloorDTO> floors = null;
+        if (parkingLot.getParkingFloorList() != null) {
+            floors = new ArrayList<ParkingFloorDTO>();
+            for (ParkingFloor floor : parkingLot.getParkingFloorList()) {
+                floors.add(parkingFloorService.getFloorById(floor.getId()));
+            }
+        }
+        ParkingLotDTO dto = new ParkingLotDTO();
+        dto.setId(parkingLot.getId());
+        dto.setName(parkingLot.getName());
+        dto.setAddress(parkingLot.getAddress());
+        dto.setFloors(floors);
+        return dto;
+    }
+}

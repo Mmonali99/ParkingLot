@@ -1,0 +1,7 @@
+package com.parkinglot.repositories;
+
+import com.parkinglot.models.ParkingFloor;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ParkingFloorRepository extends JpaRepository<ParkingFloor, Long> {
+}

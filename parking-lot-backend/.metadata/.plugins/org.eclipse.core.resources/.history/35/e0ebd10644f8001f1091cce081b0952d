@@ -1,0 +1,5 @@
+package com.parkinglot.models.enums;package com.parkinglot.models;
+
+public enum ParkingSpotStatus {
+    OCCUPIED, RESERVED, AVAILABLE
+}

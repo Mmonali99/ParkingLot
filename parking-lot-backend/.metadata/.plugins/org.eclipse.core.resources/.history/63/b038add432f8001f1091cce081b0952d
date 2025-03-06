@@ -1,0 +1,19 @@
+package com.parkinglot.config;
+
+// Placeholder for Spring Boot context
+public class SecurityConfig {
+    // In Spring Boot, this would extend WebSecurityConfigurerAdapter or use SecurityFilterChain
+    /*
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+            .antMatchers("/auth/**").permitAll()
+            .anyRequest().authenticated()
+            .and().csrf().disable();
+        return http.build();
+    }
+    */
+    public void configureSecurity() {
+        System.out.println("Security configuration placeholder: All endpoints require authentication except /auth");
+    }
+}

@@ -1,0 +1,48 @@
+package com.parkinglot.controllers;
+
+import com.parkinglot.dtos.GateDTO;
+import com.parkinglot.services.GateService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/gates")
+@Validated
+public class GateController {
+    private static final Logger logger = LoggerFactory.getLogger(GateController.class);
+
+    @Autowired
+    private GateService gateService;
+
+    @GetMapping("/{gateId}")
+    public ResponseEntity<GateDTO> getGateById(@PathVariable Long gateId) {
+        logger.info("Fetching gate with ID: {}", gateId);
+        GateDTO gateDTO = gateService.getGateById(gateId);
+        logger.info("Gate fetched: {}", gateId);
+        return ResponseEntity.ok(gateDTO);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<GateDTO>> getAllGates() {
+        logger.info("Fetching all gates");
+        List<GateDTO> gates = gateService.getAllGates();
+        logger.info("Fetched {} gates", gates.size());
+        return ResponseEntity.ok(gates);
+    }
+
+    @PutMapping("/{gateId}")
+    public ResponseEntity<GateDTO> updateGate(@PathVariable Long gateId, @Valid @RequestBody GateDTO gateDTO) {
+        logger.info("Updating gate with ID: {}", gateId);
+        gateDTO.setId(gateId);
+        GateDTO updatedGate = gateService.updateGate(gateDTO);
+        logger.info("Gate updated: {}", gateId);
+        return ResponseEntity.ok(updatedGate);
+    }
+}
